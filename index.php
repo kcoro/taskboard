@@ -17,10 +17,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ($action) {
         case 'create':
             $title = trim($_POST['title'] ?? '');
+            error_log("Create request received - Title: '$title', Empty check: " . (empty($title) ? 'true' : 'false'));
             if (!empty($title)) {
                 $task = new Task($title);
                 $taskBoard->addTask($task);
                 $_SESSION['tasks'] = $taskBoard->getTasks();
+                error_log("Task created: $title, Total tasks: " . count($_SESSION['tasks']));
+            } else {
+                error_log("Task creation failed - empty title");
             }
             break;
             
@@ -43,58 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (isset($_SERVER['HTTP_HX_REQUEST'])) {
-        include 'partials/board.php';
+        error_log("HTMX request detected, including board with " . count($_SESSION['tasks']) . " tasks");
+        $taskBoard = new TaskBoard($_SESSION['tasks']); // Recreate taskBoard for the partial
+        include 'views/partials/board.php';
         exit;
     }
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Board</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .task-card {
-            transition: all 0.2s ease-in-out;
-        }
-        .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">Task Board</h1>
-        
-        <!-- Add Task Form -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <form hx-post="index.php" hx-target="#task-board" hx-swap="outerHTML" class="flex gap-4">
-                <input type="hidden" name="action" value="create">
-                <input 
-                    type="text" 
-                    name="title" 
-                    placeholder="Enter task title..." 
-                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                >
-                <button 
-                    type="submit" 
-                    class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                >
-                    Add Task
-                </button>
-            </form>
-        </div>
-
-        <!-- Task Board -->
-        <div id="task-board">
-            <?php include 'partials/board.php'; ?>
-        </div>
-    </div>
-</body>
-</html>
+<?php include 'views/index.view.php'; ?>

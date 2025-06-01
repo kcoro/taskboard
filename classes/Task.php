@@ -1,6 +1,6 @@
 <?php
 
-readonly class Task
+class Task
 {
     public function __construct(
         public string $title,
